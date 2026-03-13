@@ -7,20 +7,19 @@ import org.junit.jupiter.api.Test;
 
 class GlyphParserTest {
     @Test
-    void returnsFirstCodePointFromFirstNonEmptyLine() {
-        String[] lines = {"", "\uE123text", "abc", ""};
-        assertEquals("\uE123", GlyphParser.firstCodePoint(lines).orElseThrow());
+    void returnsFirstCodePointForNonEmptyInput() {
+        assertEquals("\uE123", GlyphParser.firstCodePoint("\uE123text").orElseThrow());
     }
 
     @Test
     void handlesSurrogatePairs() {
         String rocket = new String(Character.toChars(0x1F680));
-        String[] lines = {rocket + " test", "", "", ""};
-        assertEquals(rocket, GlyphParser.firstCodePoint(lines).orElseThrow());
+        assertEquals(rocket, GlyphParser.firstCodePoint(rocket + " test").orElseThrow());
     }
 
     @Test
     void emptyInputReturnsEmptyOptional() {
-        assertTrue(GlyphParser.firstCodePoint(new String[]{"", " ", "", ""}).isEmpty());
+        assertTrue(GlyphParser.firstCodePoint(" ").isEmpty());
+        assertTrue(GlyphParser.firstCodePoint(null).isEmpty());
     }
 }

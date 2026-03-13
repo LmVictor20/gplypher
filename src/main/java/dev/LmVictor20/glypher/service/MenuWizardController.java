@@ -10,8 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -57,17 +58,51 @@ public class MenuWizardController {
         session.editingPresetId(null);
         session.deleteTargetPresetId(null);
         session.visiblePresetIds(Collections.emptyList());
+        session.awaitingGlyphChat(false);
         openCategoryMenu(player, session);
+    }
+
+    public boolean isAwaitingGlyphChat(Player player) {
+        return sessionManager.get(player.getUniqueId())
+            .map(WizardSession::awaitingGlyphChat)
+            .orElse(false);
+    }
+
+    public void handleGlyphChatInput(Player player, String message) {
+        WizardSession session = sessionManager.get(player.getUniqueId()).orElse(null);
+        if (session == null || !session.awaitingGlyphChat()) {
+            return;
+        }
+
+        String trimmed = message == null ? "" : message.trim();
+        if (trimmed.equalsIgnoreCase("cancel")) {
+            session.awaitingGlyphChat(false);
+            player.sendMessage(Component.text("Glyph input canceled. Run /menuconfig to start again."));
+            return;
+        }
+
+        Optional<String> glyphOptional = GlyphParser.firstCodePoint(trimmed);
+        if (glyphOptional.isEmpty()) {
+            player.sendMessage(Component.text("No glyph found. Send one symbol in chat or type 'cancel'."));
+            return;
+        }
+
+        session.awaitingGlyphChat(false);
+        session.glyph(glyphOptional.get());
+        session.offsetX(shiftCodec.clampOffset(session.offsetX()));
+        session.view(WizardView.PREVIEW_EDIT);
+        reopenPreview(player, session, true);
     }
 
     public void openSavedList(Player player, int page) {
         if (!player.hasPermission("glypher.menuconfig.list")) {
-            player.sendMessage(Component.text("У вас нет права glypher.menuconfig.list"));
+            player.sendMessage(Component.text("Missing permission: glypher.menuconfig.list"));
             return;
         }
 
         WizardSession session = sessionManager.getOrCreate(player.getUniqueId());
         session.view(WizardView.SAVED_LIST);
+        session.awaitingGlyphChat(false);
 
         List<SavedMenuPreset> all = storage.listSorted();
         int totalPages = Math.max(1, (int) Math.ceil(all.size() / (double) PAGE_SIZE));
@@ -87,7 +122,7 @@ public class MenuWizardController {
 
         GlypherInventoryHolder holder = new GlypherInventoryHolder(player.getUniqueId(), WizardView.SAVED_LIST);
         Inventory inventory = Bukkit.createInventory(holder, 54,
-            Component.text("Сохранённые меню | стр. " + (safePage + 1) + "/" + totalPages));
+            Component.text("Saved menus | page " + (safePage + 1) + "/" + totalPages));
 
         fillInventory(inventory, namedItem(Material.GRAY_STAINED_GLASS_PANE, " "));
 
@@ -97,11 +132,11 @@ public class MenuWizardController {
         }
 
         if (safePage > 0) {
-            inventory.setItem(45, namedItem(Material.ARROW, "Предыдущая страница"));
+            inventory.setItem(45, namedItem(Material.ARROW, "Previous page"));
         }
-        inventory.setItem(49, namedItem(Material.BARRIER, "Закрыть"));
+        inventory.setItem(49, namedItem(Material.BARRIER, "Close"));
         if (safePage < totalPages - 1) {
-            inventory.setItem(53, namedItem(Material.ARROW, "Следующая страница"));
+            inventory.setItem(53, namedItem(Material.ARROW, "Next page"));
         }
 
         player.openInventory(inventory);
@@ -141,8 +176,7 @@ public class MenuWizardController {
         MenuTemplate template = templates.get(slot);
         session.template(template);
         session.offsetX(0);
-
-        requestGlyphViaVirtualSign(player, session);
+        beginGlyphChatInput(player, session);
     }
 
     public void handlePreviewClick(Player player, InventoryView view, int slot, ClickType clickType) {
@@ -216,7 +250,7 @@ public class MenuWizardController {
         String presetId = visibleIds.get(slot);
         Optional<SavedMenuPreset> presetOptional = storage.get(presetId);
         if (presetOptional.isEmpty()) {
-            player.sendMessage(Component.text("Запись больше не существует."));
+            player.sendMessage(Component.text("Preset no longer exists."));
             openSavedList(player, session.listPage());
             return;
         }
@@ -224,7 +258,7 @@ public class MenuWizardController {
         SavedMenuPreset preset = presetOptional.get();
         if (shiftClick && clickType.isRightClick()) {
             if (!player.hasPermission("glypher.menuconfig.delete")) {
-                player.sendMessage(Component.text("У вас нет права glypher.menuconfig.delete"));
+                player.sendMessage(Component.text("Missing permission: glypher.menuconfig.delete"));
                 return;
             }
             openDeleteConfirm(player, session, preset.id());
@@ -257,8 +291,8 @@ public class MenuWizardController {
         if (slot == 11) {
             boolean removed = storage.delete(targetId);
             player.sendMessage(Component.text(removed
-                ? "Запись " + targetId + " удалена."
-                : "Не удалось удалить: запись не найдена."));
+                ? "Deleted preset " + targetId + "."
+                : "Delete failed: preset not found."));
             session.deleteTargetPresetId(null);
             openSavedList(player, session.listPage());
             return;
@@ -281,7 +315,7 @@ public class MenuWizardController {
 
     private void openCategoryMenu(Player player, WizardSession session) {
         GlypherInventoryHolder holder = new GlypherInventoryHolder(player.getUniqueId(), WizardView.CATEGORY_SELECT);
-        Inventory inventory = Bukkit.createInventory(holder, 27, Component.text("Шаг 1/3: Выберите категорию"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, Component.text("Step 1/3: Choose category"));
         fillInventory(inventory, namedItem(Material.GRAY_STAINED_GLASS_PANE, " "));
 
         inventory.setItem(10, namedItem(MenuCategory.CHESTS.icon(), MenuCategory.CHESTS.displayName()));
@@ -298,7 +332,7 @@ public class MenuWizardController {
 
         GlypherInventoryHolder holder = new GlypherInventoryHolder(player.getUniqueId(), WizardView.TEMPLATE_SELECT);
         Inventory inventory = Bukkit.createInventory(holder, 54,
-            Component.text("Шаг 2/3: Тип меню - " + session.category().displayName()));
+            Component.text("Step 2/3: Menu type - " + session.category().displayName()));
 
         fillInventory(inventory, namedItem(Material.GRAY_STAINED_GLASS_PANE, " "));
         for (int i = 0; i < templates.size() && i < 45; i++) {
@@ -310,28 +344,16 @@ public class MenuWizardController {
         player.openInventory(inventory);
     }
 
-    private void requestGlyphViaVirtualSign(Player player, WizardSession session) {
+    private void beginGlyphChatInput(Player player, WizardSession session) {
+        session.awaitingGlyphChat(true);
         player.closeInventory();
-        player.sendMessage(Component.text("Шаг 3/3: Введите один символ-глиф в первую строку таблички."));
-
-        protocolBridge.requestVirtualSignInput(player, "Вставьте 1 глиф", lines -> {
-            Optional<String> glyphOptional = GlyphParser.firstCodePoint(lines);
-            if (glyphOptional.isEmpty()) {
-                player.sendMessage(Component.text("Не удалось прочитать символ. Повторите ввод."));
-                requestGlyphViaVirtualSign(player, session);
-                return;
-            }
-
-            session.glyph(glyphOptional.get());
-            session.offsetX(shiftCodec.clampOffset(session.offsetX()));
-            session.view(WizardView.PREVIEW_EDIT);
-            reopenPreview(player, session, true);
-        });
+        player.sendMessage(Component.text("Step 3/3: Send one glyph symbol in chat."));
+        player.sendMessage(Component.text("Type 'cancel' to abort."));
     }
 
     private void reopenPreview(Player player, WizardSession session, boolean editable) {
         if (session.template() == null || session.glyph() == null) {
-            player.sendMessage(Component.text("Сессия повреждена. Запустите /menuconfig снова."));
+            player.sendMessage(Component.text("Session is invalid. Run /menuconfig again."));
             return;
         }
 
@@ -342,33 +364,33 @@ public class MenuWizardController {
         Inventory inventory;
         try {
             if (session.template().isChestSizeTemplate()) {
-                inventory = Bukkit.createInventory(holder, session.template().chestSize(), Component.text(title));
+                inventory = Bukkit.createInventory(holder, session.template().chestSize(), whiteTitle(title));
             } else {
-                inventory = Bukkit.createInventory(holder, session.template().inventoryType(), Component.text(title));
+                inventory = Bukkit.createInventory(holder, session.template().inventoryType(), whiteTitle(title));
             }
         } catch (Exception exception) {
-            player.sendMessage(Component.text("Не удалось открыть превью для этого типа: " + session.template().name()));
+            player.sendMessage(Component.text("Failed to open preview for menu type: " + session.template().name()));
             plugin.getLogger().warning("Failed to open preview for " + session.template() + ": " + exception.getMessage());
             return;
         }
 
-        fillInventory(inventory, namedItem(Material.PAPER, "Превью"));
+        fillInventory(inventory, namedItem(Material.PAPER, "Preview"));
 
         session.view(editable ? WizardView.PREVIEW_EDIT : WizardView.PREVIEW_READONLY);
         player.openInventory(inventory);
 
         if (editable) {
-            player.sendMessage(Component.text("Сдвиг X: " + session.offsetX() + " (диапазон " + MIN_OFFSET + ".." + MAX_OFFSET + ")"));
+            player.sendMessage(Component.text("Offset X: " + session.offsetX() + " (range " + MIN_OFFSET + ".." + MAX_OFFSET + ")"));
             Bukkit.getScheduler().runTaskLater(plugin,
                 () -> protocolBridge.showHotbarControls(player, player.getOpenInventory()), 2L);
         } else {
-            player.sendMessage(Component.text("Режим просмотра. Закройте окно для возврата."));
+            player.sendMessage(Component.text("Read-only preview. Close window to return."));
         }
     }
 
     private void saveCurrentPreset(Player player, WizardSession session) {
         if (session.category() == null || session.template() == null || session.glyph() == null) {
-            player.sendMessage(Component.text("Недостаточно данных для сохранения. Начните заново через /menuconfig."));
+            player.sendMessage(Component.text("Not enough data to save. Run /menuconfig again."));
             return;
         }
 
@@ -381,21 +403,22 @@ public class MenuWizardController {
         }
 
         player.closeInventory();
-        player.sendMessage(Component.text("Сохранено как " + preset.id() +
+        player.sendMessage(Component.text("Saved as " + preset.id() +
             " | " + preset.template().displayName() + " | offsetX=" + preset.offsetX()));
     }
 
     private void openDeleteConfirm(Player player, WizardSession session, String presetId) {
         session.view(WizardView.DELETE_CONFIRM);
         session.deleteTargetPresetId(presetId);
+        session.awaitingGlyphChat(false);
 
         GlypherInventoryHolder holder = new GlypherInventoryHolder(player.getUniqueId(), WizardView.DELETE_CONFIRM);
-        Inventory inventory = Bukkit.createInventory(holder, 27, Component.text("Удалить " + presetId + "?"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, Component.text("Delete " + presetId + "?"));
         fillInventory(inventory, namedItem(Material.GRAY_STAINED_GLASS_PANE, " "));
 
-        inventory.setItem(11, namedItem(Material.GREEN_WOOL, "Подтвердить удаление"));
-        inventory.setItem(15, namedItem(Material.RED_WOOL, "Отмена"));
-        inventory.setItem(22, namedItem(Material.BARRIER, "Назад"));
+        inventory.setItem(11, namedItem(Material.GREEN_WOOL, "Confirm delete"));
+        inventory.setItem(15, namedItem(Material.RED_WOOL, "Cancel"));
+        inventory.setItem(22, namedItem(Material.BARRIER, "Back"));
 
         player.openInventory(inventory);
     }
@@ -406,6 +429,7 @@ public class MenuWizardController {
         session.glyph(preset.glyph());
         session.offsetX(shiftCodec.clampOffset(preset.offsetX()));
         session.editingPresetId(preset.id());
+        session.awaitingGlyphChat(false);
         session.view(WizardView.PREVIEW_EDIT);
         reopenPreview(player, session, true);
     }
@@ -416,6 +440,7 @@ public class MenuWizardController {
         session.glyph(preset.glyph());
         session.offsetX(shiftCodec.clampOffset(preset.offsetX()));
         session.editingPresetId(null);
+        session.awaitingGlyphChat(false);
         session.view(WizardView.PREVIEW_READONLY);
         reopenPreview(player, session, false);
     }
@@ -426,15 +451,20 @@ public class MenuWizardController {
         if (meta != null) {
             meta.displayName(Component.text(preset.id() + " | " + preset.template().displayName()));
             meta.lore(List.of(
-                Component.text("Категория: " + preset.category().displayName()),
-                Component.text("Тип: " + preset.template().name()),
-                Component.text("Глиф: " + preset.glyph()),
-                Component.text("Сдвиг X: " + preset.offsetX()),
-                Component.text("ЛКМ: превью | ПКМ: редактировать | Shift+ПКМ: удалить")
+                Component.text("Category: " + preset.category().displayName()),
+                Component.text("Type: " + preset.template().name()),
+                Component.text("Offset X: " + preset.offsetX()),
+                Component.text("LMB: preview | RMB: edit | Shift+RMB: delete")
             ));
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    private Component whiteTitle(String title) {
+        return Component.text(title)
+            .color(NamedTextColor.WHITE)
+            .decoration(TextDecoration.ITALIC, false);
     }
 
     private ItemStack namedItem(Material material, String name) {

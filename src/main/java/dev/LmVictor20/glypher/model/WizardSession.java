@@ -18,11 +18,13 @@ public class WizardSession {
     private int listPage;
     private List<String> visiblePresetIds;
     private String deleteTargetPresetId;
+    private boolean awaitingGlyphChat;
 
     public WizardSession(UUID playerId) {
         this.playerId = playerId;
         this.view = WizardView.CATEGORY_SELECT;
         this.visiblePresetIds = new ArrayList<>();
+        this.awaitingGlyphChat = false;
     }
 
     public UUID playerId() {
@@ -99,5 +101,13 @@ public class WizardSession {
 
     public void deleteTargetPresetId(String deleteTargetPresetId) {
         this.deleteTargetPresetId = deleteTargetPresetId;
+    }
+
+    public boolean awaitingGlyphChat() {
+        return awaitingGlyphChat;
+    }
+
+    public void awaitingGlyphChat(boolean awaitingGlyphChat) {
+        this.awaitingGlyphChat = awaitingGlyphChat;
     }
 }

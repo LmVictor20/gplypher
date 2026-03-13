@@ -1,6 +1,7 @@
 package dev.LmVictor20.glypher;
 
 import dev.LmVictor20.glypher.command.MenuConfigCommand;
+import dev.LmVictor20.glypher.listener.GlyphChatListener;
 import dev.LmVictor20.glypher.listener.GlypherInventoryListener;
 import dev.LmVictor20.glypher.listener.PlayerLifecycleListener;
 import dev.LmVictor20.glypher.service.MenuPresetStorage;
@@ -37,6 +38,7 @@ public class GlypherPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new GlypherInventoryListener(controller), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(controller), this);
+        getServer().getPluginManager().registerEvents(new GlyphChatListener(this, controller), this);
 
         getLogger().info("glypher enabled");
     }

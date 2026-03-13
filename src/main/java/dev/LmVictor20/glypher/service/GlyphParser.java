@@ -1,21 +1,17 @@
 package dev.LmVictor20.glypher.service;
 
-import java.util.Arrays;
 import java.util.Optional;
 
 public final class GlyphParser {
     private GlyphParser() {
     }
 
-    public static Optional<String> firstCodePoint(String[] lines) {
-        if (lines == null || lines.length == 0) {
+    public static Optional<String> firstCodePoint(String input) {
+        if (input == null || input.isBlank()) {
             return Optional.empty();
         }
 
-        return Arrays.stream(lines)
-            .filter(line -> line != null && !line.isBlank())
-            .map(line -> line.codePointAt(0))
-            .map(codePoint -> new String(Character.toChars(codePoint)))
-            .findFirst();
+        int codePoint = input.codePointAt(0);
+        return Optional.of(new String(Character.toChars(codePoint)));
     }
 }
