@@ -1,0 +1,177 @@
+package com.lmvictor20.glypher.screen;
+
+import com.lmvictor20.glypher.model.MenuCategory;
+import com.lmvictor20.glypher.model.MenuKind;
+import com.lmvictor20.glypher.service.GlypherServices;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.text.Text;
+
+public final class MenuSelectionScreen extends Screen {
+    private final GlypherServices services;
+
+    private TextFieldWidget searchField;
+    private MenuListWidget menuListWidget;
+    private ButtonWidget nextButton;
+    private MenuCategory selectedCategory = MenuCategory.ALL;
+    private MenuKind selectedMenuKind;
+
+    public MenuSelectionScreen(GlypherServices services) {
+        super(Text.translatable("screen.glypher.menu_selection"));
+        this.services = services;
+    }
+
+    @Override
+    protected void init() {
+        this.searchField = new TextFieldWidget(this.textRenderer, this.width / 2 - 120, 28, 240, 20, Text.translatable("screen.glypher.menu_selection.search"));
+        this.searchField.setPlaceholder(Text.translatable("screen.glypher.menu_selection.search"));
+        this.searchField.setChangedListener(value -> this.refreshMenuList());
+        this.addDrawableChild(this.searchField);
+
+        this.initCategoryButtons();
+
+        this.menuListWidget = new MenuListWidget(this.client, this.width, this.height, 100, this.height - 52, 22);
+        this.addDrawableChild(this.menuListWidget);
+        this.refreshMenuList();
+
+        this.nextButton = this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.menu_selection.next"), button -> {
+            if (this.selectedMenuKind != null) {
+                this.services.newSessionForMenu(this.selectedMenuKind);
+                this.client.setScreen(new GlyphInputScreen(this, this.services));
+            }
+        }).dimensions(this.width / 2 - 100, this.height - 28, 98, 20).build());
+        this.nextButton.active = false;
+
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.menu_selection.cancel"), button -> this.close())
+            .dimensions(this.width / 2 + 2, this.height - 28, 98, 20)
+            .build());
+
+        this.setInitialFocus(this.searchField);
+    }
+
+    private void initCategoryButtons() {
+        MenuCategory[] rowOne = {MenuCategory.ALL, MenuCategory.PLAYER, MenuCategory.STORAGE, MenuCategory.PROCESSING, MenuCategory.UTILITY};
+        int buttonWidth = 72;
+        int gap = 4;
+        int totalWidth = rowOne.length * buttonWidth + (rowOne.length - 1) * gap;
+        int startX = (this.width - totalWidth) / 2;
+
+        for (int index = 0; index < rowOne.length; index++) {
+            MenuCategory category = rowOne[index];
+            int x = startX + index * (buttonWidth + gap);
+            this.addDrawableChild(ButtonWidget.builder(category.label(), button -> {
+                this.selectedCategory = category;
+                this.refreshMenuList();
+            }).dimensions(x, 52, buttonWidth, 20).build());
+        }
+
+        this.addDrawableChild(ButtonWidget.builder(MenuCategory.CRAFTING.label(), button -> {
+            this.selectedCategory = MenuCategory.CRAFTING;
+            this.refreshMenuList();
+        }).dimensions(this.width / 2 - buttonWidth / 2, 76, buttonWidth, 20).build());
+    }
+
+    private void refreshMenuList() {
+        if (this.menuListWidget == null) {
+            return;
+        }
+
+        String query = this.searchField == null ? "" : this.searchField.getText().trim().toLowerCase(Locale.ROOT);
+        List<MenuKind> filtered = Arrays.stream(MenuKind.values())
+            .filter(menuKind -> this.selectedCategory == MenuCategory.ALL || menuKind.category() == this.selectedCategory)
+            .filter(menuKind -> query.isEmpty()
+                || menuKind.label().getString().toLowerCase(Locale.ROOT).contains(query)
+                || menuKind.name().toLowerCase(Locale.ROOT).contains(query))
+            .toList();
+
+        this.menuListWidget.replaceEntries(filtered);
+
+        if (this.selectedMenuKind != null && filtered.stream().noneMatch(menuKind -> menuKind == this.selectedMenuKind)) {
+            this.selectedMenuKind = null;
+        }
+
+        if (this.nextButton != null) {
+            this.nextButton.active = this.selectedMenuKind != null;
+        }
+    }
+
+    @Override
+    public void close() {
+        if (this.client != null) {
+            this.client.setScreen(null);
+        }
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackground(context, mouseX, mouseY, delta);
+        super.render(context, mouseX, mouseY, delta);
+        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 12, 0xFFFFFF);
+
+        if (this.menuListWidget.children().isEmpty()) {
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.menu_selection.none"), this.width / 2, this.height / 2, 0xAAAAAA);
+        }
+    }
+
+    private final class MenuListWidget extends AlwaysSelectedEntryListWidget<MenuEntry> {
+        private MenuListWidget(MinecraftClient client, int width, int height, int top, int bottom, int itemHeight) {
+            super(client, width, bottom - top, top, itemHeight);
+        }
+
+        private void replaceEntries(List<MenuKind> menuKinds) {
+            this.clearEntries();
+            for (MenuKind menuKind : menuKinds) {
+                this.addEntry(new MenuEntry(menuKind));
+            }
+        }
+
+        @Override
+        public int getRowWidth() {
+            return 280;
+        }
+
+        @Override
+        protected int getScrollbarX() {
+            return this.getRowRight() + 8;
+        }
+    }
+
+    private final class MenuEntry extends AlwaysSelectedEntryListWidget.Entry<MenuEntry> {
+        private final MenuKind menuKind;
+
+        private MenuEntry(MenuKind menuKind) {
+            this.menuKind = menuKind;
+        }
+
+        @Override
+        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            boolean selected = MenuSelectionScreen.this.selectedMenuKind == this.menuKind;
+            int backgroundColor = selected ? 0x553B82F6 : hovered ? 0x33444444 : 0x22000000;
+            context.fill(x, y, x + entryWidth, y + entryHeight - 2, backgroundColor);
+            context.drawTextWithShadow(MenuSelectionScreen.this.textRenderer, this.menuKind.label(), x + 6, y + 5, 0xFFFFFF);
+            context.drawTextWithShadow(MenuSelectionScreen.this.textRenderer, this.menuKind.category().label(), x + 6, y + 16, 0xFFFFFF);
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            MenuSelectionScreen.this.selectedMenuKind = this.menuKind;
+            MenuSelectionScreen.this.menuListWidget.setSelected(this);
+            if (MenuSelectionScreen.this.nextButton != null) {
+                MenuSelectionScreen.this.nextButton.active = true;
+            }
+            return true;
+        }
+
+        @Override
+        public Text getNarration() {
+            return this.menuKind.label();
+        }
+    }
+}
