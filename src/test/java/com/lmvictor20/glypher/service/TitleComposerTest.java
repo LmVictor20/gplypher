@@ -13,7 +13,7 @@ class TitleComposerTest {
         TitleCompositionResult result = this.composer.compose(GlypherCatalog.defaultCatalog(), "glyph", 5);
 
         Assertions.assertTrue(result.valid());
-        Assertions.assertEquals("<offset_4><offset_1>glyph", result.finalTitle());
+        Assertions.assertEquals("\uF802\uF800glyph", result.finalTitle());
     }
 
     @Test

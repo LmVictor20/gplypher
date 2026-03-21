@@ -72,12 +72,7 @@ public final class GlypherCatalog {
                 new YPreset("y3", "ypreset.glypher.y3", "glyph_y3", -6),
                 new YPreset("y4", "ypreset.glypher.y4", "glyph_y4", -8)
             ),
-            List.of(
-                new OffsetGlyph(-4, "<offset_-4>"),
-                new OffsetGlyph(-1, "<offset_-1>"),
-                new OffsetGlyph(1, "<offset_1>"),
-                new OffsetGlyph(4, "<offset_4>")
-            )
+            com.lmvictor20.glypher.service.ShiftGlyphPalette.glyphs()
         );
     }
 }

@@ -30,14 +30,14 @@ public final class MenuSelectionScreen extends Screen {
 
     @Override
     protected void init() {
-        this.searchField = new TextFieldWidget(this.textRenderer, this.width / 2 - 120, 28, 240, 20, Text.translatable("screen.glypher.menu_selection.search"));
+        this.searchField = new TextFieldWidget(this.textRenderer, this.width / 2 - 150, 58, 300, 20, Text.translatable("screen.glypher.menu_selection.search"));
         this.searchField.setPlaceholder(Text.translatable("screen.glypher.menu_selection.search"));
         this.searchField.setChangedListener(value -> this.refreshMenuList());
         this.addDrawableChild(this.searchField);
 
         this.initCategoryButtons();
 
-        this.menuListWidget = new MenuListWidget(this.client, this.width, this.height, 100, this.height - 52, 22);
+        this.menuListWidget = new MenuListWidget(this.client, this.width, this.height, 146, this.height - 60, 34);
         this.addDrawableChild(this.menuListWidget);
         this.refreshMenuList();
 
@@ -46,11 +46,11 @@ public final class MenuSelectionScreen extends Screen {
                 this.services.newSessionForMenu(this.selectedMenuKind);
                 this.client.setScreen(new GlyphInputScreen(this, this.services));
             }
-        }).dimensions(this.width / 2 - 100, this.height - 28, 98, 20).build());
+        }).dimensions(this.width / 2 - 150, this.height - 36, 148, 20).build());
         this.nextButton.active = false;
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.menu_selection.cancel"), button -> this.close())
-            .dimensions(this.width / 2 + 2, this.height - 28, 98, 20)
+            .dimensions(this.width / 2 + 2, this.height - 36, 148, 20)
             .build());
 
         this.setInitialFocus(this.searchField);
@@ -69,13 +69,13 @@ public final class MenuSelectionScreen extends Screen {
             this.addDrawableChild(ButtonWidget.builder(category.label(), button -> {
                 this.selectedCategory = category;
                 this.refreshMenuList();
-            }).dimensions(x, 52, buttonWidth, 20).build());
+            }).dimensions(x, 86, buttonWidth, 20).build());
         }
 
         this.addDrawableChild(ButtonWidget.builder(MenuCategory.CRAFTING.label(), button -> {
             this.selectedCategory = MenuCategory.CRAFTING;
             this.refreshMenuList();
-        }).dimensions(this.width / 2 - buttonWidth / 2, 76, buttonWidth, 20).build());
+        }).dimensions(this.width / 2 - buttonWidth / 2, 112, buttonWidth, 20).build());
     }
 
     private void refreshMenuList() {
@@ -111,9 +111,19 @@ public final class MenuSelectionScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        this.renderBackground(context, mouseX, mouseY, delta);
+        GlypherUi.renderBackdrop(context, this.width, this.height);
+        GlypherUi.drawPanel(context, this.width / 2 - 170, 18, this.width / 2 + 170, 136);
+        GlypherUi.drawPanel(context, this.width / 2 - 184, 140, this.width / 2 + 184, this.height - 48);
+        GlypherUi.drawPanel(context, this.width / 2 - 160, this.height - 42, this.width / 2 + 160, this.height - 10);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 12, 0xFFFFFF);
+        GlypherUi.drawHeader(
+            context,
+            this.textRenderer,
+            this.width,
+            28,
+            this.title,
+            Text.translatable("screen.glypher.menu_selection.subtitle")
+        );
 
         if (this.menuListWidget.children().isEmpty()) {
             context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.menu_selection.none"), this.width / 2, this.height / 2, 0xAAAAAA);
@@ -134,7 +144,7 @@ public final class MenuSelectionScreen extends Screen {
 
         @Override
         public int getRowWidth() {
-            return 280;
+            return 332;
         }
 
         @Override
@@ -153,10 +163,11 @@ public final class MenuSelectionScreen extends Screen {
         @Override
         public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
             boolean selected = MenuSelectionScreen.this.selectedMenuKind == this.menuKind;
-            int backgroundColor = selected ? 0x553B82F6 : hovered ? 0x33444444 : 0x22000000;
-            context.fill(x, y, x + entryWidth, y + entryHeight - 2, backgroundColor);
-            context.drawTextWithShadow(MenuSelectionScreen.this.textRenderer, this.menuKind.label(), x + 6, y + 5, 0xFFFFFF);
-            context.drawTextWithShadow(MenuSelectionScreen.this.textRenderer, this.menuKind.category().label(), x + 6, y + 16, 0xFFFFFF);
+            int backgroundColor = selected ? 0xAA214C58 : hovered ? 0x66304C5A : 0x44131C24;
+            context.fill(x, y, x + entryWidth, y + entryHeight, backgroundColor);
+            context.fill(x, y, x + 4, y + entryHeight, selected ? 0xFFE6B566 : 0xFF35505F);
+            context.drawTextWithShadow(MenuSelectionScreen.this.textRenderer, this.menuKind.label(), x + 10, y + 6, 0xFFF8F6F1);
+            context.drawTextWithShadow(MenuSelectionScreen.this.textRenderer, this.menuKind.category().label(), x + 10, y + 21, 0xFFB7C7D3);
         }
 
         @Override

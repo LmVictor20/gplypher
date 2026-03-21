@@ -1,4 +1,4 @@
-[13:27:52] [Test worker/WARN]: Glypher could not read C:\Users\elekt\AppData\Local\Temp\junit13392106904308196858\glypher\catalog.json. Falling back to defaults.
+[20:49:00] [Test worker/WARN]: Glypher could not read C:\Users\elekt\AppData\Local\Temp\junit536147254317339716\glypher\catalog.json. Falling back to defaults.
 com.google.gson.JsonSyntaxException: java.io.EOFException: End of input at line 1 column 8 path $.broken
 	at com.google.gson.Gson.fromJson(Gson.java:1236) ~[gson-2.10.1.jar:?]
 	at com.google.gson.Gson.fromJson(Gson.java:1137) ~[gson-2.10.1.jar:?]

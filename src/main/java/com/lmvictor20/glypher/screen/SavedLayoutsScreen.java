@@ -22,7 +22,6 @@ public final class SavedLayoutsScreen extends Screen {
     private TextFieldWidget searchField;
     private LayoutListWidget layoutListWidget;
     private ButtonWidget editButton;
-    private ButtonWidget printButton;
     private ButtonWidget deleteButton;
     private SavedLayout selectedLayout;
 
@@ -34,26 +33,23 @@ public final class SavedLayoutsScreen extends Screen {
 
     @Override
     protected void init() {
-        this.searchField = new TextFieldWidget(this.textRenderer, this.width / 2 - 120, 28, 240, 20, Text.translatable("screen.glypher.layouts.search"));
+        this.searchField = new TextFieldWidget(this.textRenderer, this.width / 2 - 150, 62, 300, 20, Text.translatable("screen.glypher.layouts.search"));
         this.searchField.setPlaceholder(Text.translatable("screen.glypher.layouts.search"));
         this.searchField.setChangedListener(value -> this.refreshLayouts());
         this.addDrawableChild(this.searchField);
 
-        this.layoutListWidget = new LayoutListWidget(this.client, this.width, this.height, 58, this.height - 52, 34);
+        this.layoutListWidget = new LayoutListWidget(this.client, this.width, this.height, 98, this.height - 60, 40);
         this.addDrawableChild(this.layoutListWidget);
         this.refreshLayouts();
 
         this.editButton = this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.layouts.edit"), button -> this.editSelected())
-            .dimensions(this.width / 2 - 150, this.height - 28, 72, 20)
-            .build());
-        this.printButton = this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.layouts.print"), button -> this.printSelected())
-            .dimensions(this.width / 2 - 74, this.height - 28, 72, 20)
+            .dimensions(this.width / 2 - 150, this.height - 36, 96, 20)
             .build());
         this.deleteButton = this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.layouts.delete"), button -> this.deleteSelected())
-            .dimensions(this.width / 2 + 2, this.height - 28, 72, 20)
+            .dimensions(this.width / 2 - 50, this.height - 36, 96, 20)
             .build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.layouts.close"), button -> this.close())
-            .dimensions(this.width / 2 + 78, this.height - 28, 72, 20)
+            .dimensions(this.width / 2 + 50, this.height - 36, 96, 20)
             .build());
 
         this.refreshButtons();
@@ -68,8 +64,7 @@ public final class SavedLayoutsScreen extends Screen {
         List<SavedLayout> filtered = this.services.layouts().stream()
             .filter(layout -> query.isEmpty()
                 || layout.id().toLowerCase(Locale.ROOT).contains(query)
-                || layout.menuKind().label().getString().toLowerCase(Locale.ROOT).contains(query)
-                || layout.rawGlyphText().toLowerCase(Locale.ROOT).contains(query))
+                || layout.menuKind().label().getString().toLowerCase(Locale.ROOT).contains(query))
             .toList();
 
         this.layoutListWidget.replaceEntries(filtered);
@@ -85,7 +80,6 @@ public final class SavedLayoutsScreen extends Screen {
         boolean active = this.selectedLayout != null;
         if (this.editButton != null) {
             this.editButton.active = active;
-            this.printButton.active = active;
             this.deleteButton.active = active;
         }
     }
@@ -97,14 +91,6 @@ public final class SavedLayoutsScreen extends Screen {
 
         this.services.replaceSession(this.selectedLayout.toSession());
         this.client.setScreen(PreviewFactory.create(this.services, this.services.currentSession(), new GlyphInputScreen(this, this.services)));
-    }
-
-    private void printSelected() {
-        if (this.selectedLayout == null) {
-            return;
-        }
-
-        this.services.printer().print(this.client, this.services.catalog(), this.selectedLayout.toSession());
     }
 
     private void deleteSelected() {
@@ -137,9 +123,19 @@ public final class SavedLayoutsScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        this.renderBackground(context, mouseX, mouseY, delta);
+        GlypherUi.renderBackdrop(context, this.width, this.height);
+        GlypherUi.drawPanel(context, this.width / 2 - 170, 18, this.width / 2 + 170, 92);
+        GlypherUi.drawPanel(context, this.width / 2 - 194, 96, this.width / 2 + 194, this.height - 48);
+        GlypherUi.drawPanel(context, this.width / 2 - 184, this.height - 42, this.width / 2 + 184, this.height - 10);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 12, 0xFFFFFF);
+        GlypherUi.drawHeader(
+            context,
+            this.textRenderer,
+            this.width,
+            28,
+            this.title,
+            Text.translatable("screen.glypher.layouts.subtitle")
+        );
         if (this.layoutListWidget.children().isEmpty()) {
             context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.layouts.none"), this.width / 2, this.height / 2, 0xAAAAAA);
         }
@@ -159,7 +155,7 @@ public final class SavedLayoutsScreen extends Screen {
 
         @Override
         public int getRowWidth() {
-            return 300;
+            return 336;
         }
 
         @Override
@@ -178,11 +174,22 @@ public final class SavedLayoutsScreen extends Screen {
         @Override
         public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
             boolean selected = SavedLayoutsScreen.this.selectedLayout != null && SavedLayoutsScreen.this.selectedLayout.id().equalsIgnoreCase(this.layout.id());
-            int backgroundColor = selected ? 0x553B82F6 : hovered ? 0x33444444 : 0x22000000;
+            int backgroundColor = selected ? 0xAA214C58 : hovered ? 0x66304C5A : 0x44131C24;
             context.fill(x, y, x + entryWidth, y + entryHeight - 2, backgroundColor);
-            context.drawTextWithShadow(SavedLayoutsScreen.this.textRenderer, Text.literal(this.layout.id()), x + 6, y + 4, 0xFFFFFF);
-            context.drawTextWithShadow(SavedLayoutsScreen.this.textRenderer, Text.translatable("screen.glypher.layouts.menu", this.layout.menuKind().label()), x + 6, y + 16, 0xFFFFFF);
-            context.drawTextWithShadow(SavedLayoutsScreen.this.textRenderer, Text.translatable("screen.glypher.layouts.glyph", this.layout.rawGlyphText()), x + 6, y + 28, 0xFFFFFF);
+            context.fill(x, y, x + 4, y + entryHeight, selected ? 0xFFE6B566 : 0xFF35505F);
+            context.drawTextWithShadow(SavedLayoutsScreen.this.textRenderer, Text.literal(this.layout.id()), x + 10, y + 5, 0xFFF8F6F1);
+            context.drawTextWithShadow(SavedLayoutsScreen.this.textRenderer, Text.translatable("screen.glypher.layouts.menu", this.layout.menuKind().label()), x + 10, y + 18, 0xFFB7C7D3);
+            context.drawTextWithShadow(
+                SavedLayoutsScreen.this.textRenderer,
+                Text.translatable(
+                    "screen.glypher.layouts.details",
+                    this.layout.xOffset(),
+                    SavedLayoutsScreen.this.services.recommendedFontAscent(this.layout.toSession())
+                ),
+                x + 10,
+                y + 30,
+                0xFFE6B566
+            );
         }
 
         @Override

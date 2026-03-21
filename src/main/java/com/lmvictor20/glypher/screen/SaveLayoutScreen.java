@@ -26,15 +26,18 @@ public final class SaveLayoutScreen extends Screen {
 
     @Override
     protected void init() {
-        this.idField = new TextFieldWidget(this.textRenderer, this.width / 2 - 120, this.height / 2 - 10, 240, 20, Text.translatable("screen.glypher.save.id"));
+        int panelLeft = this.width / 2 - 170;
+        int panelTop = this.height / 2 - 74;
+
+        this.idField = new TextFieldWidget(this.textRenderer, panelLeft + 20, panelTop + 56, 300, 20, Text.translatable("screen.glypher.save.id"));
         this.idField.setText(this.services.currentSession().layoutId());
         this.addDrawableChild(this.idField);
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.save.confirm"), button -> this.trySave())
-            .dimensions(this.width / 2 - 100, this.height / 2 + 24, 98, 20)
+            .dimensions(panelLeft + 20, panelTop + 100, 148, 20)
             .build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.save.cancel"), button -> this.client.setScreen(this.returnScreen))
-            .dimensions(this.width / 2 + 2, this.height / 2 + 24, 98, 20)
+            .dimensions(panelLeft + 172, panelTop + 100, 148, 20)
             .build());
 
         this.setInitialFocus(this.idField);
@@ -75,9 +78,11 @@ public final class SaveLayoutScreen extends Screen {
     }
 
     private void persist(String layoutId) {
-        this.services.saveLayout(layoutId, this.services.currentSession());
+        SavedLayout layout = this.services.saveLayout(layoutId, this.services.currentSession());
+        var exportPath = this.services.exportLayout(layout);
         if (this.client.player != null) {
             this.client.player.sendMessage(Text.translatable("message.glypher.save.success", layoutId), false);
+            this.client.player.sendMessage(Text.translatable("message.glypher.save.exported", exportPath.toString()), false);
         }
         this.client.setScreen(this.returnScreen);
     }
@@ -89,10 +94,20 @@ public final class SaveLayoutScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        this.renderBackground(context, mouseX, mouseY, delta);
+        GlypherUi.renderBackdrop(context, this.width, this.height);
+        int panelLeft = this.width / 2 - 170;
+        int panelTop = this.height / 2 - 74;
+        GlypherUi.drawPanel(context, panelLeft, panelTop, panelLeft + 340, panelTop + 140);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, this.height / 2 - 36, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.save.id"), this.width / 2 - 120, this.height / 2 - 22, 0xFFFFFF);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.validationMessage, this.width / 2, this.height / 2 + 52, 0xFF8888);
+        GlypherUi.drawHeader(
+            context,
+            this.textRenderer,
+            this.width,
+            panelTop + 14,
+            this.title,
+            Text.translatable("screen.glypher.save.subtitle")
+        );
+        GlypherUi.drawSectionLabel(context, this.textRenderer, panelLeft + 20, panelTop + 42, Text.translatable("screen.glypher.save.id"));
+        context.drawCenteredTextWithShadow(this.textRenderer, this.validationMessage, this.width / 2, panelTop + 126, 0xFFFF8D8D);
     }
 }

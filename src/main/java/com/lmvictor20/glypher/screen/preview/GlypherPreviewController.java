@@ -1,11 +1,13 @@
 package com.lmvictor20.glypher.screen.preview;
 
+import com.lmvictor20.glypher.model.ActiveGlyphMetrics;
 import com.lmvictor20.glypher.model.GlypherSession;
 import com.lmvictor20.glypher.model.TitleCompositionResult;
 import com.lmvictor20.glypher.screen.SaveLayoutScreen;
 import com.lmvictor20.glypher.service.GlypherServices;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -29,7 +31,6 @@ public final class GlypherPreviewController {
     private ButtonWidget upAscentButton;
     private ButtonWidget downAscentButton;
     private ButtonWidget saveButton;
-    private ButtonWidget printButton;
 
     public GlypherPreviewController(GlypherServices services, GlypherSession session, Screen backScreen) {
         this.services = services;
@@ -41,22 +42,26 @@ public final class GlypherPreviewController {
         this.ownerScreen = ownerScreen;
         this.widgets.clear();
 
-        int buttonWidth = 48;
+        int buttonWidth = 50;
         int gap = 4;
         int rowWidth = buttonWidth * 4 + gap * 3;
-        int startX = ownerScreen.width - rowWidth - 12;
+        int startX = 12;
         int row1Y = 16;
         int row2Y = 40;
+        if (ownerScreen instanceof GlypherPreviewHost host) {
+            startX = Math.max(8, host.glypher$getTitleRenderX() - rowWidth - 18);
+            row1Y = Math.max(16, host.glypher$getTitleRenderY() - 12);
+            row2Y = row1Y + 24;
+        }
 
-        this.minusOneButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.left_1"), startX, row1Y, button -> this.adjustOffset(-1), buttonWidth);
-        this.plusOneButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.right_1"), startX + (buttonWidth + gap), row1Y, button -> this.adjustOffset(1), buttonWidth);
-        this.upAscentButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.up_1"), startX + (buttonWidth + gap) * 2, row1Y, button -> this.adjustAscent(1), buttonWidth);
-        this.downAscentButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.down_1"), startX + (buttonWidth + gap) * 3, row1Y, button -> this.adjustAscent(-1), buttonWidth);
+        this.minusFourButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.left_4"), startX, row1Y, button -> this.adjustOffset(-4), buttonWidth);
+        this.minusOneButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.left_1"), startX + (buttonWidth + gap), row1Y, button -> this.adjustOffset(-1), buttonWidth);
+        this.plusOneButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.right_1"), startX + (buttonWidth + gap) * 2, row1Y, button -> this.adjustOffset(1), buttonWidth);
+        this.plusFourButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.right_4"), startX + (buttonWidth + gap) * 3, row1Y, button -> this.adjustOffset(4), buttonWidth);
 
-        this.minusFourButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.left_4"), startX, row2Y, button -> this.adjustOffset(-4), buttonWidth);
-        this.plusFourButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.right_4"), startX + (buttonWidth + gap), row2Y, button -> this.adjustOffset(4), buttonWidth);
-        this.saveButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.save"), startX + (buttonWidth + gap) * 2, row2Y, button -> this.openSaveScreen(), buttonWidth);
-        this.printButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.print"), startX + (buttonWidth + gap) * 3, row2Y, button -> this.printCurrent(), buttonWidth);
+        this.downAscentButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.down_1"), startX, row2Y, button -> this.adjustAscent(-1), buttonWidth);
+        this.upAscentButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.offset.up_1"), startX + (buttonWidth + gap), row2Y, button -> this.adjustAscent(1), buttonWidth);
+        this.saveButton = this.addButton(widgetConsumer, Text.translatable("screen.glypher.preview.save"), startX + (buttonWidth + gap) * 2, row2Y, button -> this.openSaveScreen(), buttonWidth * 2 + gap);
 
         this.refreshButtons();
     }
@@ -76,8 +81,25 @@ public final class GlypherPreviewController {
             context.drawText(MinecraftClient.getInstance().textRenderer, Text.literal(composition.finalTitle()), titleX, titleY, 0xFFFFFF, false);
         }
 
+        Optional<ActiveGlyphMetrics> detectedMetrics = this.services.detectSelectedGlyphMetrics(this.session);
+        int recommendedAscent = this.services.recommendedFontAscent(this.session);
         Text status = composition.valid()
-            ? Text.translatable("screen.glypher.preview.status", this.session.menuKind().label(), this.session.xOffset(), this.session.titleAscent())
+            ? detectedMetrics
+                .<Text>map(metrics -> Text.translatable(
+                    "screen.glypher.preview.status.detected",
+                    this.session.menuKind().label(),
+                    this.session.xOffset(),
+                    this.session.titleAscent(),
+                    metrics.packAscent(),
+                    recommendedAscent
+                ))
+                .orElse(Text.translatable(
+                    "screen.glypher.preview.status",
+                    this.session.menuKind().label(),
+                    this.session.xOffset(),
+                    this.session.titleAscent(),
+                    recommendedAscent
+                ))
             : Text.translatable(composition.errorKey(), composition.requestedOffset());
         context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, status, 8, 8, composition.valid() ? 0xFFFFFF : 0xFF8888);
     }
@@ -140,10 +162,6 @@ public final class GlypherPreviewController {
         MinecraftClient.getInstance().setScreen(new SaveLayoutScreen(this.ownerScreen, this.services));
     }
 
-    private void printCurrent() {
-        this.services.printer().print(MinecraftClient.getInstance(), this.services.catalog(), this.session);
-    }
-
     private void refreshButtons() {
         TitleCompositionResult currentComposition = this.services.composeTitle(this.session);
         boolean hasGlyph = !this.session.rawGlyphText().isBlank();
@@ -155,7 +173,6 @@ public final class GlypherPreviewController {
         this.upAscentButton.active = true;
         this.downAscentButton.active = true;
         this.saveButton.active = hasGlyph && currentComposition.valid();
-        this.printButton.active = hasGlyph && currentComposition.valid();
     }
 
     private boolean canApplyOffset(int delta) {

@@ -1,11 +1,13 @@
 package com.lmvictor20.glypher.service;
 
+import com.lmvictor20.glypher.model.ActiveGlyphMetrics;
 import com.lmvictor20.glypher.model.GlypherCatalog;
 import com.lmvictor20.glypher.model.GlypherSession;
 import com.lmvictor20.glypher.model.MenuKind;
 import com.lmvictor20.glypher.model.SavedLayout;
 import com.lmvictor20.glypher.model.TitleCompositionResult;
 import com.lmvictor20.glypher.repository.GlypherCatalogRepository;
+import com.lmvictor20.glypher.repository.GlypherExportRepository;
 import com.lmvictor20.glypher.repository.GlypherLayoutsRepository;
 import java.nio.file.Path;
 import java.util.List;
@@ -13,29 +15,24 @@ import java.util.Optional;
 
 public final class GlypherServices {
     private final GlypherCatalogRepository catalogRepository;
+    private final GlypherExportRepository exportRepository;
     private final GlypherLayoutsRepository layoutsRepository;
     private final GlypherSessionManager sessionManager;
     private final TitleComposer titleComposer;
-    private final GlypherPrinter printer;
-    private final ActiveShiftGlyphLoader shiftGlyphLoader;
+    private final ActiveDefaultFontMetricsLoader defaultFontMetricsLoader;
 
     public GlypherServices(Path configDir) {
         this.catalogRepository = new GlypherCatalogRepository(configDir);
+        this.exportRepository = new GlypherExportRepository(configDir);
         this.layoutsRepository = new GlypherLayoutsRepository(configDir);
         this.sessionManager = new GlypherSessionManager();
         this.titleComposer = new TitleComposer();
-        this.printer = new GlypherPrinter(this.titleComposer);
-        this.shiftGlyphLoader = new ActiveShiftGlyphLoader();
+        this.defaultFontMetricsLoader = new ActiveDefaultFontMetricsLoader();
     }
 
     public GlypherCatalog catalog() {
         GlypherCatalog baseCatalog = this.catalogRepository.loadCatalog();
-        var runtimeShiftGlyphs = this.shiftGlyphLoader.loadShiftGlyphs();
-        if (runtimeShiftGlyphs.isEmpty()) {
-            return baseCatalog;
-        }
-
-        return new GlypherCatalog(baseCatalog.yPresets(), runtimeShiftGlyphs);
+        return new GlypherCatalog(baseCatalog.yPresets(), ShiftGlyphPalette.glyphs());
     }
 
     public List<SavedLayout> layouts() {
@@ -68,8 +65,18 @@ public final class GlypherServices {
         return session;
     }
 
-    public GlypherPrinter printer() {
-        return this.printer;
+    public Optional<ActiveGlyphMetrics> detectSelectedGlyphMetrics(GlypherSession session) {
+        return this.defaultFontMetricsLoader.findMetrics(session.rawGlyphText());
+    }
+
+    public int recommendedFontAscent(GlypherSession session) {
+        return this.detectSelectedGlyphMetrics(session)
+            .map(metrics -> metrics.recommendedAscent(session.titleAscent()))
+            .orElse(session.titleAscent());
+    }
+
+    public Path exportLayout(SavedLayout layout) {
+        return this.exportRepository.exportLayout(layout, this.recommendedFontAscent(layout.toSession()));
     }
 
     public SavedLayout saveLayout(String layoutId, GlypherSession session) {
@@ -98,5 +105,6 @@ public final class GlypherServices {
 
     public void deleteLayout(String layoutId) {
         this.layoutsRepository.deleteLayout(layoutId);
+        this.exportRepository.deleteExport(layoutId);
     }
 }
