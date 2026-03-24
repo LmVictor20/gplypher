@@ -1,4 +1,4 @@
-[20:49:00] [Test worker/WARN]: Glypher could not read C:\Users\elekt\AppData\Local\Temp\junit536147254317339716\glypher\catalog.json. Falling back to defaults.
+[21:20:01] [Test worker/WARN]: Glypher could not read C:\Users\elekt\AppData\Local\Temp\junit13073021778123059645\glypher\catalog.json. Falling back to defaults.
 com.google.gson.JsonSyntaxException: java.io.EOFException: End of input at line 1 column 8 path $.broken
 	at com.google.gson.Gson.fromJson(Gson.java:1236) ~[gson-2.10.1.jar:?]
 	at com.google.gson.Gson.fromJson(Gson.java:1137) ~[gson-2.10.1.jar:?]
@@ -6,7 +6,7 @@ com.google.gson.JsonSyntaxException: java.io.EOFException: End of input at line 
 	at com.google.gson.Gson.fromJson(Gson.java:1014) ~[gson-2.10.1.jar:?]
 	at com.lmvictor20.glypher.repository.JsonRepositorySupport.readOrCreate(JsonRepositorySupport.java:40) ~[main/:?]
 	at com.lmvictor20.glypher.repository.GlypherCatalogRepository.loadCatalog(GlypherCatalogRepository.java:21) ~[main/:?]
-	at com.lmvictor20.glypher.repository.GlypherRepositoriesTest.catalogRepositoryRecoversFromBrokenJson(GlypherRepositoriesTest.java:41) ~[test/:?]
+	at com.lmvictor20.glypher.repository.GlypherRepositoriesTest.catalogRepositoryRecoversFromBrokenJson(GlypherRepositoriesTest.java:84) ~[test/:?]
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?]
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?]
 	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728) ~[junit-platform-commons-1.10.2.jar:1.10.2]
