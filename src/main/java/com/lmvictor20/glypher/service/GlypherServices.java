@@ -4,6 +4,7 @@ import com.lmvictor20.glypher.model.ActiveGlyphMetrics;
 import com.lmvictor20.glypher.model.GlypherCatalog;
 import com.lmvictor20.glypher.model.GlypherSession;
 import com.lmvictor20.glypher.model.MenuKind;
+import com.lmvictor20.glypher.model.ResourcePackProvider;
 import com.lmvictor20.glypher.model.SavedLayout;
 import com.lmvictor20.glypher.model.TitleCompositionResult;
 import com.lmvictor20.glypher.repository.GlypherCatalogRepository;
@@ -56,12 +57,13 @@ public final class GlypherServices {
     }
 
     public TitleCompositionResult composeTitle(GlypherSession session) {
-        return this.titleComposer.compose(this.catalog(), session.rawGlyphText(), session.xOffset());
+        return this.titleComposer.compose(this.catalog(), session.provider(), session.rawGlyphText(), session.xOffset());
     }
 
-    public GlypherSession newSessionForMenu(MenuKind menuKind) {
+    public GlypherSession newSessionForMenu(MenuKind menuKind, ResourcePackProvider provider) {
         GlypherSession session = this.resetSession();
         session.setMenuKind(menuKind);
+        session.setProvider(provider);
         return session;
     }
 
@@ -90,6 +92,7 @@ public final class GlypherServices {
         SavedLayout layout = new SavedLayout(
             layoutId,
             session.menuKind(),
+            session.provider(),
             session.rawGlyphText(),
             session.xOffset(),
             session.titleAscent(),

@@ -102,14 +102,15 @@ public final class GlyphInputScreen extends Screen {
         GlypherUi.drawSectionLabel(context, this.textRenderer, panelLeft + 20, panelTop + 92, Text.translatable("screen.glypher.glyph_input.y_offset"));
         context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(Integer.toString(session.titleAscent())), this.width / 2, panelTop + 118, 0xFFF8F6F1);
 
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.x_offset", session.xOffset()), panelLeft + 20, panelTop + 148, 0xFFE7E0D1);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.recommended_ascent", recommendedAscent), panelLeft + 20, panelTop + 164, 0xFFE6B566);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.provider", session.provider().label()), panelLeft + 20, panelTop + 148, 0xFFE7E0D1);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.x_offset", session.xOffset()), panelLeft + 20, panelTop + 164, 0xFFE7E0D1);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.recommended_ascent", recommendedAscent), panelLeft + 20, panelTop + 180, 0xFFE6B566);
         if (detectedMetrics.isPresent()) {
             ActiveGlyphMetrics metrics = detectedMetrics.get();
-            context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.pack_ascent", metrics.packAscent()), panelLeft + 170, panelTop + 148, 0xFFB7C7D3);
-            context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.source", metrics.file()), panelLeft + 170, panelTop + 164, 0xFF8DA3B2);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.pack_ascent", metrics.packAscent()), panelLeft + 170, panelTop + 164, 0xFFB7C7D3);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.source", metrics.file()), panelLeft + 170, panelTop + 180, 0xFF8DA3B2);
         } else {
-            context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.pack_ascent_missing"), panelLeft + 170, panelTop + 148, 0xFF8DA3B2);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.glyph_input.pack_ascent_missing"), panelLeft + 170, panelTop + 164, 0xFF8DA3B2);
         }
 
         Text status = session.rawGlyphText().isBlank()

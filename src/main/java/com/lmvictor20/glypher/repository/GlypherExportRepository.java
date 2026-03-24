@@ -19,6 +19,7 @@ public final class GlypherExportRepository {
             Files.createDirectories(this.exportsDir);
             Path filePath = this.exportsDir.resolve(this.sanitizeFileName(layout.id()) + ".txt");
             String content = "ID: " + layout.id() + System.lineSeparator()
+                + "Provider: " + layout.provider().exportLabel() + System.lineSeparator()
                 + "Title: " + layout.finalTitle() + System.lineSeparator()
                 + "Ascent: " + recommendedAscent + System.lineSeparator();
             Files.writeString(

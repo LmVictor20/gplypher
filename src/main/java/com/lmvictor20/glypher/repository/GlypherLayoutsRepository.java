@@ -28,7 +28,12 @@ public final class GlypherLayoutsRepository extends JsonRepositorySupport {
                 Text.empty(),
                 Text.translatable("message.glypher.layouts_recovered")
             );
-            this.cachedLayouts = loaded == null ? new ArrayList<>() : new ArrayList<>(loaded);
+            this.cachedLayouts = loaded == null
+                ? new ArrayList<>()
+                : loaded.stream()
+                    .filter(layout -> layout != null)
+                    .map(SavedLayout::normalized)
+                    .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
             this.cachedLayouts.sort(Comparator.comparingLong(SavedLayout::updatedAt).reversed());
         }
 

@@ -3,6 +3,7 @@ package com.lmvictor20.glypher.model;
 public final class SavedLayout {
     private String id;
     private MenuKind menuKind;
+    private ResourcePackProvider provider;
     private String rawGlyphText;
     private int xOffset;
     private int titleAscent;
@@ -13,9 +14,10 @@ public final class SavedLayout {
     public SavedLayout() {
     }
 
-    public SavedLayout(String id, MenuKind menuKind, String rawGlyphText, int xOffset, int titleAscent, String finalTitle, long createdAt, long updatedAt) {
+    public SavedLayout(String id, MenuKind menuKind, ResourcePackProvider provider, String rawGlyphText, int xOffset, int titleAscent, String finalTitle, long createdAt, long updatedAt) {
         this.id = id;
         this.menuKind = menuKind;
+        this.provider = provider;
         this.rawGlyphText = rawGlyphText;
         this.xOffset = xOffset;
         this.titleAscent = titleAscent;
@@ -32,8 +34,12 @@ public final class SavedLayout {
         return this.menuKind;
     }
 
+    public ResourcePackProvider provider() {
+        return this.provider == null ? ResourcePackProvider.PLAIN : this.provider;
+    }
+
     public String rawGlyphText() {
-        return this.rawGlyphText;
+        return this.rawGlyphText == null ? "" : this.rawGlyphText;
     }
 
     public int xOffset() {
@@ -45,7 +51,7 @@ public final class SavedLayout {
     }
 
     public String finalTitle() {
-        return this.finalTitle;
+        return this.finalTitle == null ? this.rawGlyphText() : this.finalTitle;
     }
 
     public long createdAt() {
@@ -57,6 +63,20 @@ public final class SavedLayout {
     }
 
     public GlypherSession toSession() {
-        return new GlypherSession(this.menuKind, this.rawGlyphText, this.xOffset, this.titleAscent, this.id);
+        return new GlypherSession(this.menuKind, this.provider(), this.rawGlyphText(), this.xOffset, this.titleAscent, this.id);
+    }
+
+    public SavedLayout normalized() {
+        return new SavedLayout(
+            this.id,
+            this.menuKind,
+            this.provider(),
+            this.rawGlyphText(),
+            this.xOffset,
+            this.titleAscent,
+            this.finalTitle(),
+            this.createdAt,
+            this.updatedAt
+        );
     }
 }

@@ -2,17 +2,19 @@ package com.lmvictor20.glypher.model;
 
 public final class GlypherSession {
     private MenuKind menuKind;
+    private ResourcePackProvider provider;
     private String rawGlyphText;
     private int xOffset;
     private int titleAscent;
     private String layoutId;
 
     public GlypherSession() {
-        this(MenuKind.CHEST_9X3, "", 0, 0, "");
+        this(MenuKind.CHEST_9X3, ResourcePackProvider.PLAIN, "", 0, 0, "");
     }
 
-    public GlypherSession(MenuKind menuKind, String rawGlyphText, int xOffset, int titleAscent, String layoutId) {
+    public GlypherSession(MenuKind menuKind, ResourcePackProvider provider, String rawGlyphText, int xOffset, int titleAscent, String layoutId) {
         this.menuKind = menuKind;
+        this.provider = provider;
         this.rawGlyphText = rawGlyphText;
         this.xOffset = xOffset;
         this.titleAscent = titleAscent;
@@ -27,8 +29,16 @@ public final class GlypherSession {
         this.menuKind = menuKind;
     }
 
+    public ResourcePackProvider provider() {
+        return this.provider == null ? ResourcePackProvider.PLAIN : this.provider;
+    }
+
+    public void setProvider(ResourcePackProvider provider) {
+        this.provider = provider;
+    }
+
     public String rawGlyphText() {
-        return this.rawGlyphText;
+        return this.rawGlyphText == null ? "" : this.rawGlyphText;
     }
 
     public void setRawGlyphText(String rawGlyphText) {
@@ -52,7 +62,7 @@ public final class GlypherSession {
     }
 
     public String layoutId() {
-        return this.layoutId;
+        return this.layoutId == null ? "" : this.layoutId;
     }
 
     public void setLayoutId(String layoutId) {
@@ -60,6 +70,6 @@ public final class GlypherSession {
     }
 
     public GlypherSession copy() {
-        return new GlypherSession(this.menuKind, this.rawGlyphText, this.xOffset, this.titleAscent, this.layoutId);
+        return new GlypherSession(this.menuKind, this.provider(), this.rawGlyphText(), this.xOffset, this.titleAscent, this.layoutId());
     }
 }

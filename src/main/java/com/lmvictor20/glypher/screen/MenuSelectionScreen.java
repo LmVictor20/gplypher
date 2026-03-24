@@ -2,10 +2,13 @@ package com.lmvictor20.glypher.screen;
 
 import com.lmvictor20.glypher.model.MenuCategory;
 import com.lmvictor20.glypher.model.MenuKind;
+import com.lmvictor20.glypher.model.ResourcePackProvider;
 import com.lmvictor20.glypher.service.GlypherServices;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -20,12 +23,15 @@ public final class MenuSelectionScreen extends Screen {
     private TextFieldWidget searchField;
     private MenuListWidget menuListWidget;
     private ButtonWidget nextButton;
+    private final Map<ResourcePackProvider, ButtonWidget> providerButtons = new EnumMap<>(ResourcePackProvider.class);
     private MenuCategory selectedCategory = MenuCategory.ALL;
     private MenuKind selectedMenuKind;
+    private ResourcePackProvider selectedProvider;
 
     public MenuSelectionScreen(GlypherServices services) {
         super(Text.translatable("screen.glypher.menu_selection"));
         this.services = services;
+        this.selectedProvider = services.currentSession().provider();
     }
 
     @Override
@@ -36,14 +42,15 @@ public final class MenuSelectionScreen extends Screen {
         this.addDrawableChild(this.searchField);
 
         this.initCategoryButtons();
+        this.initProviderButtons();
 
-        this.menuListWidget = new MenuListWidget(this.client, this.width, this.height, 146, this.height - 60, 34);
+        this.menuListWidget = new MenuListWidget(this.client, this.width, this.height, 188, this.height - 60, 34);
         this.addDrawableChild(this.menuListWidget);
         this.refreshMenuList();
 
         this.nextButton = this.addDrawableChild(ButtonWidget.builder(Text.translatable("screen.glypher.menu_selection.next"), button -> {
             if (this.selectedMenuKind != null) {
-                this.services.newSessionForMenu(this.selectedMenuKind);
+                this.services.newSessionForMenu(this.selectedMenuKind, this.selectedProvider);
                 this.client.setScreen(new GlyphInputScreen(this, this.services));
             }
         }).dimensions(this.width / 2 - 150, this.height - 36, 148, 20).build());
@@ -76,6 +83,39 @@ public final class MenuSelectionScreen extends Screen {
             this.selectedCategory = MenuCategory.CRAFTING;
             this.refreshMenuList();
         }).dimensions(this.width / 2 - buttonWidth / 2, 112, buttonWidth, 20).build());
+    }
+
+    private void initProviderButtons() {
+        this.providerButtons.clear();
+
+        ResourcePackProvider[] providers = {
+            ResourcePackProvider.NEXO_ORAXEN,
+            ResourcePackProvider.ITEMS_ADDER,
+            ResourcePackProvider.PLAIN
+        };
+        int buttonWidth = 92;
+        int gap = 6;
+        int totalWidth = providers.length * buttonWidth + (providers.length - 1) * gap;
+        int startX = (this.width - totalWidth) / 2;
+
+        for (int index = 0; index < providers.length; index++) {
+            ResourcePackProvider provider = providers[index];
+            int x = startX + index * (buttonWidth + gap);
+            ButtonWidget button = this.addDrawableChild(ButtonWidget.builder(provider.label(), ignored -> {
+                this.selectedProvider = provider;
+                this.services.currentSession().setProvider(provider);
+                this.refreshProviderButtons();
+            }).dimensions(x, 150, buttonWidth, 20).build());
+            this.providerButtons.put(provider, button);
+        }
+
+        this.refreshProviderButtons();
+    }
+
+    private void refreshProviderButtons() {
+        for (Map.Entry<ResourcePackProvider, ButtonWidget> entry : this.providerButtons.entrySet()) {
+            entry.getValue().active = entry.getKey() != this.selectedProvider;
+        }
     }
 
     private void refreshMenuList() {
@@ -112,8 +152,8 @@ public final class MenuSelectionScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         GlypherUi.renderBackdrop(context, this.width, this.height);
-        GlypherUi.drawPanel(context, this.width / 2 - 170, 18, this.width / 2 + 170, 136);
-        GlypherUi.drawPanel(context, this.width / 2 - 184, 140, this.width / 2 + 184, this.height - 48);
+        GlypherUi.drawPanel(context, this.width / 2 - 170, 18, this.width / 2 + 170, 180);
+        GlypherUi.drawPanel(context, this.width / 2 - 184, 184, this.width / 2 + 184, this.height - 48);
         GlypherUi.drawPanel(context, this.width / 2 - 160, this.height - 42, this.width / 2 + 160, this.height - 10);
         super.render(context, mouseX, mouseY, delta);
         GlypherUi.drawHeader(
@@ -124,6 +164,7 @@ public final class MenuSelectionScreen extends Screen {
             this.title,
             Text.translatable("screen.glypher.menu_selection.subtitle")
         );
+        GlypherUi.drawSectionLabel(context, this.textRenderer, this.width / 2 - 40, 138, Text.translatable("screen.glypher.menu_selection.provider"));
 
         if (this.menuListWidget.children().isEmpty()) {
             context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("screen.glypher.menu_selection.none"), this.width / 2, this.height / 2, 0xAAAAAA);

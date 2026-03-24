@@ -38,7 +38,7 @@ public final class SavedLayoutsScreen extends Screen {
         this.searchField.setChangedListener(value -> this.refreshLayouts());
         this.addDrawableChild(this.searchField);
 
-        this.layoutListWidget = new LayoutListWidget(this.client, this.width, this.height, 98, this.height - 60, 40);
+        this.layoutListWidget = new LayoutListWidget(this.client, this.width, this.height, 98, this.height - 60, 44);
         this.addDrawableChild(this.layoutListWidget);
         this.refreshLayouts();
 
@@ -64,7 +64,8 @@ public final class SavedLayoutsScreen extends Screen {
         List<SavedLayout> filtered = this.services.layouts().stream()
             .filter(layout -> query.isEmpty()
                 || layout.id().toLowerCase(Locale.ROOT).contains(query)
-                || layout.menuKind().label().getString().toLowerCase(Locale.ROOT).contains(query))
+                || layout.menuKind().label().getString().toLowerCase(Locale.ROOT).contains(query)
+                || layout.provider().label().getString().toLowerCase(Locale.ROOT).contains(query))
             .toList();
 
         this.layoutListWidget.replaceEntries(filtered);
@@ -178,7 +179,13 @@ public final class SavedLayoutsScreen extends Screen {
             context.fill(x, y, x + entryWidth, y + entryHeight - 2, backgroundColor);
             context.fill(x, y, x + 4, y + entryHeight, selected ? 0xFFE6B566 : 0xFF35505F);
             context.drawTextWithShadow(SavedLayoutsScreen.this.textRenderer, Text.literal(this.layout.id()), x + 10, y + 5, 0xFFF8F6F1);
-            context.drawTextWithShadow(SavedLayoutsScreen.this.textRenderer, Text.translatable("screen.glypher.layouts.menu", this.layout.menuKind().label()), x + 10, y + 18, 0xFFB7C7D3);
+            context.drawTextWithShadow(
+                SavedLayoutsScreen.this.textRenderer,
+                Text.translatable("screen.glypher.layouts.meta", this.layout.menuKind().label(), this.layout.provider().label()),
+                x + 10,
+                y + 18,
+                0xFFB7C7D3
+            );
             context.drawTextWithShadow(
                 SavedLayoutsScreen.this.textRenderer,
                 Text.translatable(
@@ -187,7 +194,7 @@ public final class SavedLayoutsScreen extends Screen {
                     SavedLayoutsScreen.this.services.recommendedFontAscent(this.layout.toSession())
                 ),
                 x + 10,
-                y + 30,
+                y + 31,
                 0xFFE6B566
             );
         }

@@ -76,9 +76,9 @@ public final class GlypherPreviewController {
     public void renderOverlay(DrawContext context) {
         TitleCompositionResult composition = this.services.composeTitle(this.session);
         if (this.ownerScreen instanceof GlypherPreviewHost host) {
-            int titleX = host.glypher$getTitleRenderX();
+            int titleX = host.glypher$getTitleRenderX() + composition.previewXOffset();
             int titleY = host.glypher$getTitleRenderY() - this.session.titleAscent();
-            context.drawText(MinecraftClient.getInstance().textRenderer, Text.literal(composition.finalTitle()), titleX, titleY, 0xFFFFFF, false);
+            context.drawText(MinecraftClient.getInstance().textRenderer, Text.literal(composition.previewText()), titleX, titleY, 0xFFFFFF, false);
         }
 
         Optional<ActiveGlyphMetrics> detectedMetrics = this.services.detectSelectedGlyphMetrics(this.session);
@@ -87,6 +87,7 @@ public final class GlypherPreviewController {
             ? detectedMetrics
                 .<Text>map(metrics -> Text.translatable(
                     "screen.glypher.preview.status.detected",
+                    this.session.provider().label(),
                     this.session.menuKind().label(),
                     this.session.xOffset(),
                     this.session.titleAscent(),
@@ -95,6 +96,7 @@ public final class GlypherPreviewController {
                 ))
                 .orElse(Text.translatable(
                     "screen.glypher.preview.status",
+                    this.session.provider().label(),
                     this.session.menuKind().label(),
                     this.session.xOffset(),
                     this.session.titleAscent(),
