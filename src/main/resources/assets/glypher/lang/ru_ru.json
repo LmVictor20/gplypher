@@ -96,4 +96,7 @@
   "ypreset.glypher.y2": "Y2",
   "ypreset.glypher.y3": "Y3",
   "ypreset.glypher.y4": "Y4"
+  ,
+  "screen.glypher.glyph_input.picker": "Glyph picker from active resource pack",
+  "screen.glypher.glyph_input.picker_empty": "No bitmap glyphs found in active minecraft:font/default.json"
 }

@@ -12,7 +12,7 @@ Instead of guessing offsets inside a JSON file, you can:
 
 - choose the vanilla menu type;
 - choose the resource-pack provider mode;
-- enter the glyph used by your resource pack;
+- enter the glyph used by your resource pack or pick it from the built-in glyph scroller;
 - preview the title inside the real GUI;
 - adjust `X` and `Y`;
 - save the result as a small export file.
@@ -74,6 +74,14 @@ This only changes how the final exported `Title` string is written.
 ### Step 3: Enter the glyph
 
 Type the glyph used by your resource pack.
+
+You can also choose it directly from the built-in glyph scroller on the glyph input screen.
+
+The scroller reads the active `minecraft:font/default.json`, finds bitmap glyphs, and shows:
+
+- the PNG file name;
+- the glyph itself;
+- a small clipped preview so large GUI glyphs stay inside the selector row.
 
 This should be the actual glyph from your generated `default.json`, not a texture path, not a placeholder name, and not the image file name.
 
@@ -268,7 +276,7 @@ Example:
 4. Run `/glypher create`.
 5. Choose the menu type.
 6. Choose the provider mode.
-7. Paste or type the glyph from `default.json`.
+7. Paste/type the glyph from `default.json` or select it from the glyph scroller.
 8. Adjust `X` and `Y` in preview.
 9. Save the layout.
 10. Open the exported text file.

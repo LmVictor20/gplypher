@@ -1,6 +1,7 @@
 package com.lmvictor20.glypher.service;
 
 import com.lmvictor20.glypher.model.ActiveGlyphMetrics;
+import com.lmvictor20.glypher.model.ActiveGlyphChoice;
 import com.lmvictor20.glypher.model.GlypherCatalog;
 import com.lmvictor20.glypher.model.GlypherSession;
 import com.lmvictor20.glypher.model.MenuKind;
@@ -69,6 +70,10 @@ public final class GlypherServices {
 
     public Optional<ActiveGlyphMetrics> detectSelectedGlyphMetrics(GlypherSession session) {
         return this.defaultFontMetricsLoader.findMetrics(session.rawGlyphText());
+    }
+
+    public List<ActiveGlyphChoice> availableGlyphChoices() {
+        return this.defaultFontMetricsLoader.availableGlyphChoices();
     }
 
     public int recommendedFontAscent(GlypherSession session) {

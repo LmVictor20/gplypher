@@ -20,6 +20,8 @@
   "screen.glypher.glyph_input.glyph": "Glyph text",
   "screen.glypher.glyph_input.glyph_hint": "Paste raw glyph text or PUA characters",
   "screen.glypher.glyph_input.y_offset": "Y offset",
+  "screen.glypher.glyph_input.picker": "Pick from active resource pack",
+  "screen.glypher.glyph_input.picker_empty": "No bitmap glyphs were found in the active minecraft:font/default.json",
   "screen.glypher.glyph_input.provider": "Provider: %s",
   "screen.glypher.glyph_input.x_offset": "X offset: %s",
   "screen.glypher.glyph_input.pack_ascent": "Pack ascent: %s",
